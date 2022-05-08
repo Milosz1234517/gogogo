@@ -3,10 +3,15 @@ from gameEngine import board as b
 
 class Game:
 
-    def __init__(self, rows, columns, gameID, player1Nick, player2Nick):
+    def __init__(self, rows, columns, gameID, player1Nick):
+        self.isOngoing = True
+        self.blackStonesSet = 0
+        self.whiteStonesSet = 0
+
         self.gameID = gameID
-        self.player1Nick=player1Nick
-        self.player2Nick=player2Nick
+        self.player1Nick = player1Nick
+        self.player2Nick = None
+        self.started = False
         self.rows = rows
         self.columns = columns
         self.board = b.Board(rows, columns)
@@ -88,7 +93,12 @@ class Game:
                 self.board.makeEmpty(x, y)
                 self.changeTour()
                 return False
+            if self.board.matrix[x, y].stoneColour == 1:
+                self.whiteStonesSet += 1
+            elif self.board.matrix[x, y].stoneColour == 2:
+                self.blackStonesSet += 1
             self.passCounter = 0
+
             return True
         else:
             return False

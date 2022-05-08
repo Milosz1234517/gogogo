@@ -1,3 +1,5 @@
+import uuid
+
 from gameEngine import game as g
 import os
 from flask import Flask, jsonify
@@ -6,13 +8,66 @@ app = Flask(__name__)
 
 posX = -1
 posY = -1
-iterator = 0
-game = g.Game(9, 9)
+games = {}
+
+iterator = -1
 
 
-@app.route("/board")
-def showBoard():
-    board = game.board
+@app.route("/create/<string:nick>")
+def createGame(nick):
+    global iterator
+    iterator += 1
+    games[iterator] = g.Game(9, 9, iterator, nick)
+    return jsonify({"gameId": games[iterator].gameID})
+
+
+@app.route("/join/<string:nick>")
+def joinGame(nick):
+    ng = None
+    for gm in games.keys():
+        if not games[gm].started:
+            games[gm].started = True
+            games[gm].player2Nick = nick
+            ng = gm
+            break
+    return jsonify({"gameId": ng})
+
+
+@app.route("/leave/<int:gameId>")
+def leaveGame(gameId):
+    if not games[gameId].isOngoing:
+        games.pop(gameId)
+        return jsonify({"remove": "Game: " + str(gameId) + " was removed"})
+    else:
+        games[gameId].isOngoing = False
+        return jsonify({"remove": "Game: " + str(gameId) + " is being removed"})
+
+
+@app.route("/onGoing/<int:gameId>")
+def isOnGoing(gameId):
+    return jsonify({"onGoing": games[gameId].isOngoing})
+
+
+@app.route("/end/<int:gameId>")
+def finishGame(gameId):
+    games.pop(gameId)
+    return jsonify({"remove": "Game: " + str(gameId) + " was removed"})
+
+
+@app.route("/pass/<int:gameId>")
+def passMove(gameId):
+    games[gameId].passTurn()
+    return jsonify({"response": "Turn passed", "passCounter": games[gameId].passCounter})
+
+
+@app.route("/checkT/<int:gameId>")
+def turn(gameId):
+    return jsonify({"turn": games[gameId].turn})
+
+
+@app.route("/board/<int:gameId>")
+def showBoard(gameId):
+    board = games[gameId].board
     numberInZeroRow = 1
     numberInZeroColumn = 1
     numberInLastRow = 1
@@ -49,15 +104,15 @@ def showBoard():
             line += "|" + str(char)
         line += "|"
         line += "\n"
-    return jsonify({"board": line})
+    return jsonify({"board": line, "turn": games[gameId].turn})
 
 
-@app.route("/points")
-def showPoints():
-    blackTerritoryPoints = game.getTerritoryPoints(1)
-    whiteTerritoryPoints = game.getTerritoryPoints(2)
-    blackStonePoints = game.countStones(2)
-    whiteStonePoints = game.countStones(1)
+@app.route("/points/<int:gameId>")
+def showPoints(gameId):
+    blackTerritoryPoints = games[gameId].getTerritoryPoints(1)
+    whiteTerritoryPoints = games[gameId].getTerritoryPoints(2)
+    blackStonePoints = games[gameId].countStones(2)
+    whiteStonePoints = games[gameId].countStones(1)
     return jsonify({"points": "Black Territory: "
                               + str(blackTerritoryPoints) +
                               "\nBlack Stones: " +
@@ -75,16 +130,17 @@ def showPoints():
                               + "\n"})
 
 
-@app.route("/cords/<int:x>,<int:y>")
-def insertCoordinates(x, y):
-    game.posX = -1
-    game.posY = -1
-    while game.posX < 1 or game.posX > game.getCurrentBoard().rowNumber - 1 \
-            or game.posY < 1 or game.posY > game.getCurrentBoard().rowNumber - 1:
-        game.posX = x
-        game.posY = y
-    if not game.insertStone(game.posX, game.posY):
+@app.route("/cords/<int:y>,<int:x>,<int:gameId>")
+def insertCoordinates(y, x, gameId):
+    games[gameId].posX = -1
+    games[gameId].posY = -1
+    while games[gameId].posX < 1 or games[gameId].posX > games[gameId].getCurrentBoard().rowNumber - 1 \
+            or games[gameId].posY < 1 or games[gameId].posY > games[gameId].getCurrentBoard().rowNumber - 1:
+        games[gameId].posX = x
+        games[gameId].posY = y
+    if not games[gameId].insertStone(games[gameId].posX, games[gameId].posY):
         return jsonify({"response": "Bad Move!"})
+    return jsonify({"response": "Move x = " + str(x) + " y = " + str(y)})
 
 
 if __name__ == '__main__':

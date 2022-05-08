@@ -13,7 +13,8 @@ class Menu:
             choice = int(input("1.Make new game\n2.doloncz do gry\n3.Exit\n"))
             if (choice == 1):
                 print("xd")
-                # request z stworzeniem gry
+                self.menu1()
+
             elif (choice == 2):
                 print("xd")
                 self.menu2()
@@ -22,9 +23,26 @@ class Menu:
             elif (choice == 3):
                 break
 
+    def menu1(self):
+        print("xd")
+#request z tworzeniem gry
+        while True:
+            choice = int(input("1.Odswierzvstan gry\n2.wycofaj sie\n"))
+            if (choice == 1):
+                print("xd")
+            # request z odświerzeniem stanu gry
+            req=True
+            if req:
+                self.menuGame()
+                break
+
+            elif (choice == 2):
+                #wycofanie gry
+                break
+
     def menu2(self):
         gamenumber = 22  # tu sprawdzamy liste gier
-        choice=-1
+        choice = -1
         if (gamenumber < 1):
             print("Brak Dostępnych gier")
         else:
@@ -36,13 +54,17 @@ class Menu:
                     break
                 else:
                     print("Błąd")
-            #request z dołączeniem do gry
-            odp=True
+            # request z dołączeniem do gry
+            odp = True
             if (odp):
                 print("dołączam")
+                self.menuGame()
             else:
                 print("Gra Zajęta")
 
+    def menuGame(self):
+        print("xd")
+        #tu trzeba pomyśleć czy bardziej po stronie serwera czy po stronie klienta robimy
 
 
 

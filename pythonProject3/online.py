@@ -1,6 +1,7 @@
 import uuid
 
 from gameEngine import game as g
+from gameEngine import rock as r
 import os
 from flask import Flask, jsonify
 
@@ -11,6 +12,68 @@ posY = -1
 games = {}
 
 iterator = -1
+
+
+def createFile(gameID):
+    f = open(gameID + ".txt", "x")
+    f.close()
+    return gameID + ".txt"
+
+
+def saveToFile(filename, gameId):
+    f = open(filename, "w")
+    tempgame = games[gameId]
+
+    sep = "\n"
+    s = gameId + sep \
+        + tempgame.player1Nick + sep \
+        + tempgame.player2Nick + sep \
+        + tempgame.turn + sep \
+        + tempgame.passCounter + sep \
+        + tempgame.blackStonesSet + sep \
+        + tempgame.whiteStonesSet + sep
+    if tempgame.koRock is not None:
+        s += tempgame.koRock.row + "," + tempgame.koRock.column + sep
+    else:
+        s += "-1" + "," + "-1" + sep
+    for i in range(11):
+        for j in range(11):
+            if not (i == 0 or j == 0 or i == 10 or j == 10):
+                s += i + "," + j + "," + tempgame.board.matrix[i, j].stoneColour + sep
+
+    f.write(s)
+    f.close()
+
+
+def loadStateFromFile(pathToFile):
+    f = open(pathToFile, "r")
+    iter = 0
+    tempgame = g.Game(9, 9, -22, "temp")
+    for x in f:
+        if iter == 0:
+            tempgame.gemeId = x
+        elif iter == 1:
+            tempgame.player1Nick = x
+        elif iter == 2:
+            tempgame.player2Nick = x
+        elif iter == 3:
+            tempgame.turn = x
+        elif iter == 4:
+            tempgame.passCounter = x
+        elif iter == 5:
+            tempgame.blackStonesSet = x
+        elif iter == 6:
+            tempgame.whiteStonesSet = x
+        elif iter == 7:
+            kor = x.split(",")
+            korockRow = int(kor[0])
+            korockcolumn = int(kor[1])
+            tempgame.koRock = r.Rock(korockRow, korockcolumn, 5)
+        else:
+            rr = x.split(",")
+            tempgame.board.setRock(int(rr[0]), int(rr[1]), int(rr[2]))
+        iter += 1
+    return tempgame
 
 
 @app.route("/create/<string:nick>")
@@ -24,12 +87,13 @@ def createGame(nick):
 @app.route("/join/<string:nick>")
 def joinGame(nick):
     ng = None
-    for gm in games.keys():
-        if not games[gm].started:
-            games[gm].started = True
-            games[gm].player2Nick = nick
-            ng = gm
-            break
+    for gm in list(games.keys())[:]:
+        if gm in games:
+            if not games[gm].started:
+                games[gm].started = True
+                games[gm].player2Nick = nick
+                ng = gm
+                break
     return jsonify({"gameId": ng})
 
 
@@ -48,16 +112,11 @@ def isOnGoing(gameId):
     return jsonify({"onGoing": games[gameId].isOngoing})
 
 
-@app.route("/end/<int:gameId>")
-def finishGame(gameId):
-    games.pop(gameId)
-    return jsonify({"remove": "Game: " + str(gameId) + " was removed"})
-
-
 @app.route("/pass/<int:gameId>")
 def passMove(gameId):
-    games[gameId].passTurn()
-    return jsonify({"response": "Turn passed", "passCounter": games[gameId].passCounter})
+    if games[gameId].passTurn():
+        games[gameId].isOngoing = False
+    return jsonify({"passCounter": games[gameId].passCounter})
 
 
 @app.route("/checkT/<int:gameId>")
@@ -104,7 +163,7 @@ def showBoard(gameId):
             line += "|" + str(char)
         line += "|"
         line += "\n"
-    return jsonify({"board": line, "turn": games[gameId].turn})
+    return jsonify({"board": line})
 
 
 @app.route("/points/<int:gameId>")

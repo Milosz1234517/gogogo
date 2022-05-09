@@ -14,66 +14,13 @@ games = {}
 iterator = -1
 
 
-def createFile(gameID):
-    f = open(gameID + ".txt", "x")
-    f.close()
-    return gameID + ".txt"
-
-
-def saveToFile(filename, gameId):
-    f = open(filename, "w")
-    tempgame = games[gameId]
-
-    sep = "\n"
-    s = gameId + sep \
-        + tempgame.player1Nick + sep \
-        + tempgame.player2Nick + sep \
-        + tempgame.turn + sep \
-        + tempgame.passCounter + sep \
-        + tempgame.blackStonesSet + sep \
-        + tempgame.whiteStonesSet + sep
-    if tempgame.koRock is not None:
-        s += tempgame.koRock.row + "," + tempgame.koRock.column + sep
-    else:
-        s += "-1" + "," + "-1" + sep
-    for i in range(11):
-        for j in range(11):
-            if not (i == 0 or j == 0 or i == 10 or j == 10):
-                s += i + "," + j + "," + tempgame.board.matrix[i, j].stoneColour + sep
-
-    f.write(s)
-    f.close()
-
-
-def loadStateFromFile(pathToFile):
-    f = open(pathToFile, "r")
-    iter = 0
-    tempgame = g.Game(9, 9, -22, "temp")
-    for x in f:
-        if iter == 0:
-            tempgame.gemeId = x
-        elif iter == 1:
-            tempgame.player1Nick = x
-        elif iter == 2:
-            tempgame.player2Nick = x
-        elif iter == 3:
-            tempgame.turn = x
-        elif iter == 4:
-            tempgame.passCounter = x
-        elif iter == 5:
-            tempgame.blackStonesSet = x
-        elif iter == 6:
-            tempgame.whiteStonesSet = x
-        elif iter == 7:
-            kor = x.split(",")
-            korockRow = int(kor[0])
-            korockcolumn = int(kor[1])
-            tempgame.koRock = r.Rock(korockRow, korockcolumn, 5)
-        else:
-            rr = x.split(",")
-            tempgame.board.setRock(int(rr[0]), int(rr[1]), int(rr[2]))
-        iter += 1
-    return tempgame
+@app.route("/load/<int:gameId>/<string:data>")
+def loadGame(gameId, data):
+    xyz = data.split("\n")
+    for s in xyz:
+        rock = s.split(",")
+        games[gameId].getCurrentBoard().setRock(int(rock[0]), int(rock[1]), int(rock[2]))
+    return jsonify({"load": "load"})
 
 
 @app.route("/create/<string:nick>")
@@ -86,7 +33,7 @@ def createGame(nick):
 
 @app.route("/join/<string:nick>")
 def joinGame(nick):
-    ng = None
+    ng = -1
     for gm in list(games.keys())[:]:
         if gm in games:
             if not games[gm].started:
@@ -99,11 +46,11 @@ def joinGame(nick):
 
 @app.route("/leave/<int:gameId>")
 def leaveGame(gameId):
-    if not games[gameId].isOngoing:
+    if games[gameId].isOngoing == 0 or games[gameId].player2Nick is None:
         games.pop(gameId)
         return jsonify({"remove": "Game: " + str(gameId) + " was removed"})
     else:
-        games[gameId].isOngoing = False
+        games[gameId].isOngoing = 0
         return jsonify({"remove": "Game: " + str(gameId) + " is being removed"})
 
 
@@ -115,7 +62,7 @@ def isOnGoing(gameId):
 @app.route("/pass/<int:gameId>")
 def passMove(gameId):
     if games[gameId].passTurn():
-        games[gameId].isOngoing = False
+        games[gameId].isOngoing = 0
     return jsonify({"passCounter": games[gameId].passCounter})
 
 
@@ -199,6 +146,7 @@ def insertCoordinates(y, x, gameId):
         games[gameId].posY = y
     if not games[gameId].insertStone(games[gameId].posX, games[gameId].posY):
         return jsonify({"response": "Bad Move!"})
+    print(games[gameId].turn)
     return jsonify({"response": "Move x = " + str(x) + " y = " + str(y)})
 
 

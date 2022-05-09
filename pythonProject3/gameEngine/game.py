@@ -4,7 +4,7 @@ from gameEngine import board as b
 class Game:
 
     def __init__(self, rows, columns, gameID, player1Nick):
-        self.isOngoing = True
+        self.isOngoing = 1
         self.blackStonesSet = 0
         self.whiteStonesSet = 0
 
@@ -160,7 +160,7 @@ class Game:
     def changeTour(self):
         if self.turn == 2:
             self.turn = 1
-        else:
+        elif self.turn == 1:
             self.turn = 2
 
     def countStones(self, color):

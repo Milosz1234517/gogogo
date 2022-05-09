@@ -4,7 +4,7 @@ import os
 
 posX = -1
 posY = -1
-game = g.Game(9, 9)
+game = g.Game(9, 9, None, None)
 
 
 def showBoard(board):

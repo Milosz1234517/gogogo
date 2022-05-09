@@ -68,6 +68,10 @@ def inGameMenu(gameID, color):
             data = response.text
             print(json.loads(data)['board'])
 
+            response = requests.get('http://127.0.0.1:5000/points/' + str(gameID))
+            data = response.text
+            print(json.loads(data)['points'])
+
             choice = int(input("1.Wstaw\n2.Pass\n3.Wycofaj\n"))
             if choice == 1:
                 x = input("x:\n")
@@ -89,6 +93,10 @@ def inGameMenu(gameID, color):
             response = requests.get('http://127.0.0.1:5000/board/' + str(gameID))
             data = response.text
             print(json.loads(data)['board'])
+
+            response = requests.get('http://127.0.0.1:5000/points/' + str(gameID))
+            data = response.text
+            print(json.loads(data)['points'])
 
         else:
             choice = int(input("1.Odswierz stan gry\n2.wycofaj sie\n"))

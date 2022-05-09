@@ -124,7 +124,7 @@ def joinGame(nick):
 @app.route("/leave/<int:gameId>")
 def leaveGame(gameId):
     game = loadStateFromFile(str(gameId) + ".txt")
-    if game.isOngoing == 0 or game.player2Nick == "None":
+    if game.isOngoing == 0 or game.player2Nick == "":
         idList.pop(gameId)
         os.remove(str(gameId) + ".txt")
         return jsonify({"remove": "Game: " + str(gameId) + " was removed"})

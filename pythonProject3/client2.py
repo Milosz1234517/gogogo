@@ -18,7 +18,9 @@ def joinGame(nick):
 
 
 def mainMenu():
-    nick = input("Insert nick\n")
+    nick = ""
+    while nick == "":
+        nick = input("Insert nick\n")
     while True:
         choice = int(input("1.Make new game\n2.doloncz do gry\n3.Load\n4.Exit\n"))
         if choice == 1:

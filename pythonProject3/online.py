@@ -46,7 +46,7 @@ def joinGame(nick):
 
 @app.route("/leave/<int:gameId>")
 def leaveGame(gameId):
-    if games[gameId].isOngoing == 0 or games[gameId].player2Nick is None:
+    if games[gameId].isOngoing == 0 or games[gameId].player2Nick == "":
         games.pop(gameId)
         return jsonify({"remove": "Game: " + str(gameId) + " was removed"})
     else:

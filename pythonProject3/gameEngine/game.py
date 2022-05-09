@@ -10,7 +10,7 @@ class Game:
 
         self.gameID = gameID
         self.player1Nick = player1Nick
-        self.player2Nick = None
+        self.player2Nick = ""
         self.started = False
         self.rows = rows
         self.columns = columns

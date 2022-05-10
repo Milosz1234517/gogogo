@@ -1,47 +1,47 @@
-import uuid
-
 from gameEngine import game as g
-from gameEngine import rock as r
-import os
 from flask import Flask, jsonify
+import dialog
 
 app = Flask(__name__)
 
-posX = -1
-posY = -1
 games = {}
 
-iterator = -1
+globalID = -1
+
+
+@app.route("/players/<int:gameId>")
+def players(gameId):
+    return jsonify({"player1": games[gameId].player1Nick, "player2": games[gameId].player2Nick})
 
 
 @app.route("/load/<int:gameId>/<string:data>")
 def loadGame(gameId, data):
-    xyz = data.split("\n")
-    for s in xyz:
-        rock = s.split(",")
+    dataTable = data.split("\n")
+    for line in dataTable:
+        rock = line.split(",")
         games[gameId].getCurrentBoard().setRock(int(rock[0]), int(rock[1]), int(rock[2]))
     return jsonify({"load": "load"})
 
 
 @app.route("/create/<string:nick>")
 def createGame(nick):
-    global iterator
-    iterator += 1
-    games[iterator] = g.Game(9, 9, iterator, nick)
-    return jsonify({"gameId": games[iterator].gameID})
+    global globalID
+    globalID += 1
+    games[globalID] = g.Game(9, 9, globalID, nick)
+    return jsonify({"gameId": games[globalID].gameID})
 
 
 @app.route("/join/<string:nick>")
 def joinGame(nick):
-    ng = -1
-    for gm in list(games.keys())[:]:
-        if gm in games:
-            if not games[gm].started:
-                games[gm].started = True
-                games[gm].player2Nick = nick
-                ng = gm
+    myGameID = -1
+    for gameKeyId in list(games.keys())[:]:
+        if gameKeyId in games:
+            if not games[gameKeyId].started:
+                games[gameKeyId].started = True
+                games[gameKeyId].player2Nick = nick
+                myGameID = gameKeyId
                 break
-    return jsonify({"gameId": ng})
+    return jsonify({"gameId": myGameID})
 
 
 @app.route("/leave/<int:gameId>")
@@ -73,81 +73,17 @@ def turn(gameId):
 
 @app.route("/board/<int:gameId>")
 def showBoard(gameId):
-    board = games[gameId].board
-    numberInZeroRow = 1
-    numberInZeroColumn = 1
-    numberInLastRow = 1
-    numberInLastColumn = 1
-    line = ""
-    for i in range(board.rowNumber):
-        for j in range(board.columnNumber):
-            if board.matrix[i, j].stoneColour == 0:
-                char = " "
-            elif board.matrix[i, j].stoneColour == 1:
-                char = "W"
-            elif board.matrix[i, j].stoneColour == 2:
-                char = "B"
-            elif board.matrix[i, j].stoneColour == 3:
-                if board.rowNumber < 12 or board.columnNumber < 12:
-                    if (i == 0 or i == board.rowNumber - 1) and (j == 0 or j == board.columnNumber - 1):
-                        char = "O"
-                    elif i == 0:
-                        char = numberInZeroColumn
-                        numberInZeroColumn += 1
-                    elif i == board.rowNumber - 1:
-                        char = numberInLastColumn
-                        numberInLastColumn += 1
-                    elif j == 0:
-                        char = numberInZeroRow
-                        numberInZeroRow += 1
-                    else:
-                        char = numberInLastRow
-                        numberInLastRow += 1
-                else:
-                    char = "O"
-            else:
-                char = "E"
-            line += "|" + str(char)
-        line += "|"
-        line += "\n"
-    return jsonify({"board": line})
+    return jsonify({"board": dialog.makeBoardString(games[gameId].board)})
 
 
 @app.route("/points/<int:gameId>")
 def showPoints(gameId):
-    blackTerritoryPoints = games[gameId].getTerritoryPoints(1)
-    whiteTerritoryPoints = games[gameId].getTerritoryPoints(2)
-    blackStonePoints = games[gameId].countStones(2)
-    whiteStonePoints = games[gameId].countStones(1)
-    return jsonify({"points": "Black Territory: "
-                              + str(blackTerritoryPoints) +
-                              "\nBlack Stones: " +
-                              str(blackStonePoints) +
-                              "\nBlack Points: " +
-                              str(blackTerritoryPoints +
-                                  blackStonePoints) +
-                              "\n" + "\nWhite Territory: " +
-                              str(whiteTerritoryPoints) +
-                              "\nWhite Stones: " +
-                              str(whiteStonePoints) +
-                              "\nWhite Points: "
-                              + str(whiteTerritoryPoints +
-                                    whiteStonePoints + 7.5)
-                              + "\n"})
+    return jsonify({"points": dialog.makePointsString(games[gameId])})
 
 
 @app.route("/cords/<int:y>,<int:x>,<int:gameId>")
 def insertCoordinates(y, x, gameId):
-    games[gameId].posX = -1
-    games[gameId].posY = -1
-    while games[gameId].posX < 1 or games[gameId].posX > games[gameId].getCurrentBoard().rowNumber - 1 \
-            or games[gameId].posY < 1 or games[gameId].posY > games[gameId].getCurrentBoard().rowNumber - 1:
-        games[gameId].posX = x
-        games[gameId].posY = y
-    if not games[gameId].insertStone(games[gameId].posX, games[gameId].posY):
-        return jsonify({"response": "Bad Move!"})
-    print(games[gameId].turn)
-    return jsonify({"response": "Move x = " + str(x) + " y = " + str(y)})
+    return jsonify({"response": dialog.makeMove(games[gameId], x, y)})
 
 
 if __name__ == '__main__':
